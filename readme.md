@@ -1,14 +1,10 @@
-# OpenLayers + Vite
+# Sefaria - Lech-Lecha
 
-This example demonstrates how the `ol` package can be used with [Vite](https://vitejs.dev/).
+This is the repo for Sefaria's submission to the NLI/Yad HaNadiv's [Tarboot contest](https://tarboot.org/)
 
-To get started, run the following (requires Node 14+):
+To run locally change into your new `lech-lecha` directory and start a development server (available at http://localhost:5173):
 
-    npx create-ol-app my-app --template vite
-
-Then change into your new `my-app` directory and start a development server (available at http://localhost:5173):
-
-    cd my-app
+    cd lech-lecha
     npm start
 
 To generate a build ready for production:
