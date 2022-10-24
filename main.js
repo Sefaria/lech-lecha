@@ -32,13 +32,22 @@ async function geoCode(lat, lon) {
             console.log(data)
             const isWb = data['address']['country_code'] == "ps"
             let placeArray = []
-            if (data['address']['suburb']) placeArray.push(data['address']['suburb'])
-            if (data['address']['neighbourhood']) placeArray.push(data['address']['neighbourhood'])
-            if (data['address']['village']) placeArray.push(data['address']['village'])
-            if (data['address']['city']) placeArray.push(data['address']['city'])
-            if (data['address']['state_district']) placeArray.push(data['address']['state_district'])
-            // const placeArray = data['display_name'].split(',')
-            getNLI(placeArray, isWb)
+            if (data['address']['suburb']) placeArray.push(
+                generateNliKeyword(data['address']['suburb'], isWb)
+            )
+            if (data['address']['neighbourhood']) placeArray.push(
+                generateNliKeyword(data['address']['neighbourhood'], isWb)
+            )
+            if (data['address']['village']) placeArray.push(
+                generateNliKeyword(data['address']['village'], isWb)
+            )
+            if (data['address']['city']) placeArray.push(
+                generateNliKeyword(data['address']['city'], isWb)
+            )
+            if (data['address']['state_district']) placeArray.push(
+                generateNliKeyword(data['address']['state_district'], isWb)
+                )
+            getNLI(placeArray)
       })
 }
 
@@ -52,6 +61,8 @@ function generateNliKeyword(place, isWb) {
     return `${place}`.trim()
 
     // return `${place}*(${isWb ? "West Bank": "Israel"})*`.trim()
+    // return `${place}*(${isWb ? "יהודה ושומרון": "ישראל"})*`.trim()
+
 }
 
 
@@ -126,23 +137,35 @@ async function getPOIs(mapCenter) {
         "method": "POST",
     }).then((r) => r.json()).then( data => {
         console.log(data)
+        const blacklist = [
+            "גת",
+            "מערת קבורה",
+        ]
 
         data.elements.forEach(poi => {
-            console.log(poi.tags.name)
+            if (poi.tags) {
+                if (poi.tags.name && !blacklist.includes(poi.tags.name))
+                console.log(poi.tags.name)
+            }
         })
     })
 
 }
 
 
-async function getNLI(placeArray, isWb) {
+
+
+async function getNLI(keywords) {
     document.querySelector("#nli_images").innerHTML = "Loading..."
-    if (stopSearch || placeArray.length == 0) {
+    if (stopSearch || keywords.length == 0) {
         document.querySelector("#nli_images").innerHTML = "No Records Found..."
 
         return
     }
-    const keyword = generateNliKeyword(placeArray.shift(), isWb)
+    // const keyword = generateNliKeyword(placeArray.shift(), isWb)
+
+    const keyword = keywords.shift()
+
     console.log(keyword)
 
     const url = new URL("https://eu01.alma.exlibrisgroup.com/view/sru/972NNL_INST")
@@ -167,7 +190,7 @@ async function getNLI(placeArray, isWb) {
             const recordsCount = xmlDoc.getElementsByTagName("numberOfRecords")[0].childNodes[0].nodeValue;
             console.log(recordsCount)
             if (recordsCount == 0) {
-                getNLI(placeArray, isWb)
+                getNLI(keywords)
             }
             else {
                 document.querySelector('#nli_images').innerHTML = "";
@@ -210,8 +233,9 @@ function onMoveEnd(evt) {
 
     function () {
         geoCode(latLon[1], latLon[0])
+        getPOIs(latLon)
+
     }, 1000);
-    // getPOIs(latLon)
     console.log(latLon)
     console.log(getBoundingBox(latLon, 2))
 }
