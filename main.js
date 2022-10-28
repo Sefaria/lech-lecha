@@ -19,17 +19,21 @@ const map = new Map({
   })
 });
 
+let imagesFound = false;
+
 async function geoCode(lat, lon) {
 
     const options = {
         method: 'GET',
         headers: {
+            'X-RapidAPI-Key': '71673a8524mshe9c23d751378eadp11b833jsnef895841b56f',
+            'X-RapidAPI-Host': 'forward-reverse-geocoding.p.rapidapi.com'
         }
     };
 
     await fetch(`https://forward-reverse-geocoding.p.rapidapi.com/v1/reverse?lat=${lat}&lon=${lon}&accept-language=he&polygon_threshold=0.0`, options)
         .then((r) => r.json()).then( data => {
-            console.log(data)
+            // console.log(data)
             const isWb = data['address']['country_code'] == "ps"
             let placeArray = []
             if (data['address']['suburb']) placeArray.push(
@@ -127,27 +131,113 @@ function getBoundingBox(centerPoint, distance) {
     ];
 };
 
+async function getImageDataFromNLI(url_req) {
+        await fetch(url_req)
+            .then((r) => r.text())
+            .then(str => new window.DOMParser().parseFromString(str, "text/xml"))
+            .then( xmlDoc => {
 
-async function getPOIs(mapCenter) {
-    const bbox = getBoundingBox(mapCenter, 2)
+                const recordsCount = xmlDoc.getElementsByTagName("numberOfRecords")[0].childNodes[0].nodeValue;
+                console.log(recordsCount)
+                if (recordsCount == 0) {
+                  document.querySelector("#nli_images").innerHTML = "No Records Found..."
+                  document.querySelector("#placename").innerHTML = ""
+
+                  return false
+
+                }
+                else {
+                    document.querySelector("#nli_images").innerHTML = ""
+                    document.querySelector("#placename").innerHTML = ""
+
+                    const records = xmlDoc.querySelector("records").querySelectorAll("recordData")
+
+                    records.forEach(record => {
+                        const tag907 = record.querySelector("[*|tag='907']")
+                        const tag245 = record.querySelector("[*|tag='245']")
+                        let titleString = ""
+                        if (tag245) {titleString = titleString + `${tag245.querySelector("[*|code='a']").innerHTML} `}
+                        if (tag907 && tag907.querySelector("[*|code='d']")) {
+                            const image = document.createElement('img')
+                            image.className = "nliImage"
+                            image.src  = `https://rosetta.nli.org.il/delivery/DeliveryManagerServlet?dps_func=stream&dps_pid=${tag907.querySelector("[*|code='d']").innerHTML}`
+
+                            image.title = titleString
+
+                            document.querySelector('#nli_images').appendChild(image);
+                            return true
+                        }
+                        else {
+                          return false
+                        }
+                    });
+
+
+
+
+
+                }
+            })
+
+}
+
+
+
+async function getPOIs(mapCenter, radius) {
+    const bbox = getBoundingBox(mapCenter, radius)
     const query = encodeURI(`data=[out:json][timeout:2];(node["historic"](${bbox[0]},${bbox[1]},${bbox[2]},${bbox[3]});way["historic"](${bbox[0]},${bbox[1]},${bbox[2]},${bbox[3]});++relation["historic"](${bbox[0]},${bbox[1]},${bbox[2]},${bbox[3]}););out+body;>;out+skel+qt;`)
+
+    document.querySelector("#placename").innerHTML = "Searching for points of interest..."
+    document.querySelector("#nli_images").innerHTML = ""
 
     await fetch("https://overpass-api.de/api/interpreter", {
         "body": query,
         "method": "POST",
     }).then((r) => r.json()).then( data => {
-        console.log(data)
+        // console.log(data)
         const blacklist = [
             "גת",
             "מערת קבורה",
         ]
+        if (data.elements.length == 0) {
+           document.querySelector('#placename').innerHTML = `No POIs within ${radius}km`;
+        }
 
-        data.elements.forEach(poi => {
+        let pois = []
+
+        data.elements.every((poi, i) => {
             if (poi.tags) {
-                if (poi.tags.name && !blacklist.includes(poi.tags.name))
-                console.log(poi.tags.name)
+                if (poi.tags.name && !blacklist.includes(poi.tags.name)) {
+                   console.log(poi.tags.name)
+                  pois.push(poi.tags.name)
+
+                  const url = new URL("https://eu01.alma.exlibrisgroup.com/view/sru/972NNL_INST")
+                  const params = {
+                      version: 1.2,
+                      operation: 'searchRetrieve',
+                      recordSchema: 'marcxml',
+                      query: encodeURI(`alma.all_for_ui="${poi.tags.name}" and alma.local_field_999="PHOTOGRAPH" local_field_903="No restrictions" sortBy alma.main_pub_date/sort.ascending`),
+                      maximumRecords: 7
+                  }
+                  url.search = new URLSearchParams(params)
+
+                  console.log(poi.tags.name)
+
+                  document.querySelector('#placename').innerHTML = `Searching for results from ${poi.tags.name}`;
+
+                  console.log(i)
+                  return getImageDataFromNLI(url)
+
+
+
+
+                }
             }
         })
+
+        console.log('done')
+
+
     })
 
 }
@@ -159,6 +249,7 @@ async function getNLI(keywords) {
     document.querySelector("#nli_images").innerHTML = "Loading..."
     if (stopSearch || keywords.length == 0) {
         document.querySelector("#nli_images").innerHTML = "No Records Found..."
+        document.querySelector("#placename").innerHTML = ""
 
         return
     }
@@ -166,7 +257,7 @@ async function getNLI(keywords) {
 
     const keyword = keywords.shift()
 
-    console.log(keyword)
+    // console.log(keyword)
 
     const url = new URL("https://eu01.alma.exlibrisgroup.com/view/sru/972NNL_INST")
     const params = {
@@ -232,13 +323,20 @@ function onMoveEnd(evt) {
     debounce = setTimeout(
 
     function () {
-        geoCode(latLon[1], latLon[0])
-        getPOIs(latLon)
+        // geoCode(latLon[1], latLon[0])
+        getPOIs(latLon, .5)
 
     }, 1000);
-    console.log(latLon)
-    console.log(getBoundingBox(latLon, 2))
+    // console.log(latLon)
+    // console.log(getBoundingBox(latLon, 2))
 }
 
 map.on('moveend', onMoveEnd);
 map.on('movestart', onMoveStart);
+
+document.querySelector('#nli_images').addEventListener('click', (e) => {
+  if (e.target.tagName.toLowerCase() === 'img') {
+    console.log(`${e.target.title}: ${e.target.src}`)
+    // do your action on your 'li' or whatever it is you're listening for
+  }
+});
