@@ -14,8 +14,8 @@ const map = new Map({
     })
   ],
   view: new View({
-    center: transform([35.1751, 31.7962], 'EPSG:4326', 'EPSG:3857'),
-    zoom: 14
+    center: transform([35.21525804388815, 31.775488166069692], 'EPSG:4326', 'EPSG:3857'),
+    zoom: 18
   })
 });
 
@@ -26,7 +26,7 @@ async function geoCode(lat, lon) {
     const options = {
         method: 'GET',
         headers: {
-            'X-RapidAPI-Key': '71673a8524mshe9c23d751378eadp11b833jsnef895841b56f',
+            'X-RapidAPI-Key': '',
             'X-RapidAPI-Host': 'forward-reverse-geocoding.p.rapidapi.com'
         }
     };
@@ -319,6 +319,7 @@ function onMoveEnd(evt) {
     stopSearch = false
     const map = evt.map;
     const latLon = transform(map.getView().getCenter(), 'EPSG:3857', 'EPSG:4326')
+    console.log(latLon)
 
     debounce = setTimeout(
 
@@ -337,6 +338,16 @@ map.on('movestart', onMoveStart);
 document.querySelector('#nli_images').addEventListener('click', (e) => {
   if (e.target.tagName.toLowerCase() === 'img') {
     console.log(`${e.target.title}: ${e.target.src}`)
+
+    document.querySelector('#image_det').src = e.target.src;
+    document.querySelector('#caption').innerHTML = e.target.title;
+    document.querySelector('#detail').style.display = "block";
+
+
     // do your action on your 'li' or whatever it is you're listening for
   }
+});
+
+document.querySelector('#detail').addEventListener('click', (e) => {
+    document.querySelector('#detail').style.display = "none";
 });

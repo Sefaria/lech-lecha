@@ -21,6 +21,7 @@ html, body {
 .nliImage {
   width: auto;
   height: 100%;
+  cursor: pointer;
 }
 
 #detail {
@@ -31,6 +32,36 @@ html, body {
   right:0;
   width: 100%;
   height: 100%;
-  background: red;
+  background: rgba(0,0,0,.7);
   display: none;
+  text-align: center;
+  cursor: pointer;
+
+}
+
+#pointer {
+  width: 20px;
+  height: 20px;
+  border-radius: 20px;
+  border: 1px solid black;
+  left: 50%;
+  top:30%;
+  position: absolute;
+  background-color: red
+}
+
+#image_det {
+  height: 100%;
+  width: auto;
+  margin: auto
+}
+#caption {
+  position: absolute;
+  bottom: 0;
+  font-size: 44px;
+  background: rgba(0, 0, 0,.5);
+  width: 100%;
+  text-align: center;
+  color: white;
+  direction: rtl;
 }
