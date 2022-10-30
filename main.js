@@ -26,7 +26,6 @@ async function geoCode(lat, lon) {
     const options = {
         method: 'GET',
         headers: {
-            'X-RapidAPI-Key': '',
             'X-RapidAPI-Host': 'forward-reverse-geocoding.p.rapidapi.com'
         }
     };
