@@ -183,8 +183,33 @@ async function getImageDataFromNLI(url_req) {
 
 
 async function getPOIs(mapCenter, radius) {
-    const bbox = getBoundingBox(mapCenter, radius)
-    const query = encodeURI(`data=[out:json][timeout:2];(node["historic"](${bbox[0]},${bbox[1]},${bbox[2]},${bbox[3]});way["historic"](${bbox[0]},${bbox[1]},${bbox[2]},${bbox[3]});++relation["historic"](${bbox[0]},${bbox[1]},${bbox[2]},${bbox[3]}););out+body;>;out+skel+qt;`)
+    const bbox = getBoundingBox(mapCenter, radius);
+    const bbox_str = `${bbox[0]},${bbox[1]},${bbox[2]},${bbox[3]}`;
+    const query = encodeURI(`data=[out:json][timeout:2];
+        (
+            node["historic"](${bbox_str});
+            way["historic"](${bbox_str});
+            ++relation["historic"](${bbox_str});
+            
+            node["building"="public"](${bbox_str});
+            way["building"="public"](${bbox_str});
+            relation["building"="public"](${bbox_str});
+
+            node["building"="hospital"](${bbox_str});
+            way["building"="hospital"](${bbox_str});
+            relation["building"="hospital"](${bbox_str});
+            
+            node["amenity"="library"](${bbox_str});
+            way["amenity"="library"](${bbox_str});
+            relation["amenity"="library"](${bbox_str});
+
+            node["natural"="peak" ](${bbox_str});
+            way["natural"="peak" ](${bbox_str});
+            relation["natural"="peak" ](${bbox_str});
+
+                       
+        )
+        ;out+body;>;out+skel+qt;`);
 
     document.querySelector("#placename").innerHTML = "Searching for points of interest..."
     document.querySelector("#nli_images").innerHTML = ""
@@ -198,7 +223,7 @@ async function getPOIs(mapCenter, radius) {
             "גת",
             "מערת קבורה",
         ]
-        if (data.elements.length == 0) {
+        if (data.elements.length === 0) {
            document.querySelector('#placename').innerHTML = `No POIs within ${radius}km`;
         }
 
@@ -246,7 +271,7 @@ async function getPOIs(mapCenter, radius) {
 
 async function getNLI(keywords) {
     document.querySelector("#nli_images").innerHTML = "Loading..."
-    if (stopSearch || keywords.length == 0) {
+    if (stopSearch || keywords.length === 0) {
         document.querySelector("#nli_images").innerHTML = "No Records Found..."
         document.querySelector("#placename").innerHTML = ""
 
