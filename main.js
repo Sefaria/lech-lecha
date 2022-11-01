@@ -139,16 +139,12 @@ async function getImageDataFromNLI(url_req) {
                 const recordsCount = xmlDoc.getElementsByTagName("numberOfRecords")[0].childNodes[0].nodeValue;
                 console.log(recordsCount)
                 if (recordsCount == 0) {
-                  document.querySelector("#nli_images").innerHTML = "No Records Found..."
                   document.querySelector("#placename").innerHTML = ""
 
                   return false
 
                 }
                 else {
-                    document.querySelector("#nli_images").innerHTML = ""
-                    document.querySelector("#placename").innerHTML = ""
-
                     const records = xmlDoc.querySelector("records").querySelectorAll("recordData")
 
                     records.forEach(record => {
@@ -164,6 +160,7 @@ async function getImageDataFromNLI(url_req) {
                             image.title = titleString
 
                             document.querySelector('#nli_images').appendChild(image);
+                            document.querySelector("#placename").innerHTML = ""
                             return true
                         }
                         else {
@@ -183,13 +180,15 @@ async function getImageDataFromNLI(url_req) {
 
 
 async function getPOIs(mapCenter, radius) {
+
+
     const bbox = getBoundingBox(mapCenter, radius);
     const bbox_str = `${bbox[0]},${bbox[1]},${bbox[2]},${bbox[3]}`;
     const query = encodeURI(`data=[out:json][timeout:2];
         (
             node["historic"](${bbox_str});
             way["historic"](${bbox_str});
-            ++relation["historic"](${bbox_str});
+            relation["historic"](${bbox_str});
             
             node["building"="public"](${bbox_str});
             way["building"="public"](${bbox_str});
@@ -199,19 +198,19 @@ async function getPOIs(mapCenter, radius) {
             way["building"="hospital"](${bbox_str});
             relation["building"="hospital"](${bbox_str});
             
-            node["amenity"="library"](${bbox_str});
-            way["amenity"="library"](${bbox_str});
-            relation["amenity"="library"](${bbox_str});
-
             node["natural"="peak" ](${bbox_str});
             way["natural"="peak" ](${bbox_str});
             relation["natural"="peak" ](${bbox_str});
+
+            node["tourism"="viewpoint"](${bbox_str});
+            way["tourism"="viewpoint"](${bbox_str});
+            relation["tourism"="viewpoint"](${bbox_str});
 
                        
         )
         ;out+body;>;out+skel+qt;`);
 
-    document.querySelector("#placename").innerHTML = "Searching for points of interest..."
+    document.querySelector("#placename").innerHTML = "מחפש מיקומים מעניינים..."
     document.querySelector("#nli_images").innerHTML = ""
 
     await fetch("https://overpass-api.de/api/interpreter", {
@@ -222,14 +221,19 @@ async function getPOIs(mapCenter, radius) {
         const blacklist = [
             "גת",
             "מערת קבורה",
+            "ספריה עירונית",
+            "War Memorial"
         ]
         if (data.elements.length === 0) {
-           document.querySelector('#placename').innerHTML = `No POIs within ${radius}km`;
+           document.querySelector('#placename').innerHTML = `לצערנו, לא נמצאו נקודות עניין ברדיוס של ${radius} ק״מ`;
         }
 
         let pois = []
 
         data.elements.every((poi, i) => {
+            document.querySelector("#placename").innerHTML = "מחפש מיקומים מעניינים..."
+
+            console.log(poi)
             if (poi.tags) {
                 if (poi.tags.name && !blacklist.includes(poi.tags.name)) {
                    console.log(poi.tags.name)
@@ -241,13 +245,13 @@ async function getPOIs(mapCenter, radius) {
                       operation: 'searchRetrieve',
                       recordSchema: 'marcxml',
                       query: encodeURI(`alma.all_for_ui="${poi.tags.name}" and alma.local_field_999="PHOTOGRAPH" local_field_903="No restrictions" sortBy alma.main_pub_date/sort.ascending`),
-                      maximumRecords: 7
+                      maximumRecords: 20
                   }
                   url.search = new URLSearchParams(params)
 
                   console.log(poi.tags.name)
 
-                  document.querySelector('#placename').innerHTML = `Searching for results from ${poi.tags.name}`;
+                  document.querySelector('#placename').innerHTML = `מחפש תוצאות עבור ${poi.tags.name}`;
 
                   console.log(i)
                   return getImageDataFromNLI(url)
@@ -255,6 +259,11 @@ async function getPOIs(mapCenter, radius) {
 
 
 
+                }
+                else {
+                    document.querySelector('#placename').innerHTML = `מחפש תוצאות עבור ${poi.tags.name}`;
+
+                    return true
                 }
             }
         })
@@ -270,11 +279,8 @@ async function getPOIs(mapCenter, radius) {
 
 
 async function getNLI(keywords) {
-    document.querySelector("#nli_images").innerHTML = "Loading..."
+    document.querySelector("#placename").innerHTML = "טוען..."
     if (stopSearch || keywords.length === 0) {
-        document.querySelector("#nli_images").innerHTML = "No Records Found..."
-        document.querySelector("#placename").innerHTML = ""
-
         return
     }
     // const keyword = generateNliKeyword(placeArray.shift(), isWb)
@@ -294,7 +300,7 @@ async function getNLI(keywords) {
     url.search = new URLSearchParams(params)
 
     console.log(url)
-    document.querySelector('#placename').innerHTML = `Searching for results from ${keyword}`;
+    document.querySelector('#placename').innerHTML = `מחפש תוצאות עבור ${keyword}`;
 
     await fetch(url)
         .then((r) => r.text())
@@ -335,7 +341,9 @@ async function getNLI(keywords) {
 
 let debounce
 function onMoveStart(evt) {
+    document.querySelector("#nli_images").innerHTML = ""
     clearTimeout(debounce);
+    fetch("https://overpass-api.de/api/kill_my_queries")
     stopSearch = true
 }
 

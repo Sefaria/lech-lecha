@@ -17,12 +17,14 @@ html, body {
 #nli_images {
   height: 100%;
   white-space: nowrap;
+  overflow-x: scroll;
 }
 .nliImage {
   width: auto;
   height: 100%;
   cursor: pointer;
   display: inline-block;
+  margin-inline-end: 5px;
 }
 
 #detail {
@@ -38,6 +40,9 @@ html, body {
   text-align: center;
   cursor: pointer;
 
+}
+#placename {
+  position: absolute;
 }
 
 #pointer {
