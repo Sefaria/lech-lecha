@@ -16,12 +16,13 @@ html, body {
 }
 #nli_images {
   height: 100%;
-  overflow-y: scroll;
+  white-space: nowrap;
 }
 .nliImage {
   width: auto;
   height: 100%;
   cursor: pointer;
+  display: inline-block;
 }
 
 #detail {
