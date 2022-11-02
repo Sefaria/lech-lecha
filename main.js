@@ -6,6 +6,8 @@ import {transform} from "ol/proj";
 
 let stopSearch = true;
 let firstLoad = true;
+let lastSearch = false;
+
 navigator.geolocation.getCurrentPosition(coordsSet, coordsFailed, {
   enableHighAccuracy: true,
   timeout: 5000,
@@ -163,7 +165,7 @@ function getBoundingBox(centerPoint, distance) {
     ];
 };
 
-async function getImageDataFromNLI(url_req) {
+async function getImageDataFromNLI(url_req, kw=null) {
         await fetch(url_req)
             .then((r) => r.text())
             .then(str => new window.DOMParser().parseFromString(str, "text/xml"))
@@ -172,6 +174,19 @@ async function getImageDataFromNLI(url_req) {
                 const recordsCount = xmlDoc.getElementsByTagName("numberOfRecords")[0].childNodes[0].nodeValue;
                 if (recordsCount == 0) {
                   document.querySelector("#placename").innerHTML = ""
+
+
+                   if (lastSearch && document.querySelectorAll(".nliimages").length === 0) {
+                       if (kw) {
+                           getNLI(kw)
+                       }
+                       else {
+                           const latLon = transform(map.getView().getCenter(), 'EPSG:3857', 'EPSG:4326')
+                           geoCode(latLon[1], latLon[0])
+                           lastSearch = false
+                       }
+                   }
+
 
                   return true
 
@@ -264,6 +279,7 @@ async function getPOIs(mapCenter, radius) {
 
         let pois = []
 
+        lastSearch = false
         data.elements.every((poi, i) => {
             document.querySelector("#placename").innerHTML = "מחפש מיקומים מעניינים..."
 
@@ -287,9 +303,8 @@ async function getPOIs(mapCenter, radius) {
 
                   document.querySelector('#placename').innerHTML = `מחפש תוצאות עבור ${poi.tags.name}`;
 
-                  if (i+1 === data.elements.length && document.querySelectorAll(".nliimages").length === 0) {
-                    const latLon = transform(map.getView().getCenter(), 'EPSG:3857', 'EPSG:4326')
-                    geoCode(latLon[1], latLon[0])
+                  if (i+1 === data.elements.length) {
+                      lastSearch = true
                   }
 
                   return getImageDataFromNLI(url)
@@ -335,11 +350,9 @@ async function getNLI(keywords) {
 
     document.querySelector('#placename').innerHTML = `מחפש תוצאות עבור ${keyword}`;
 
-    getImageDataFromNLI(url).then(() => {
-        if (document.querySelectorAll(".nliimages").length === 0) {
-            getNLI(keywords)
-        }
-    })
+    lastSearch = true
+    getImageDataFromNLI(url, keywords)
+
 
 }
 
