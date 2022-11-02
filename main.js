@@ -344,7 +344,7 @@ async function getNLI(keywords) {
         operation: 'searchRetrieve',
         recordSchema: 'marcxml',
         query: encodeURI(`alma.all_for_ui="${keyword}" and alma.local_field_999="PHOTOGRAPH" local_field_903="No restrictions" sortBy alma.main_pub_date/sort.ascending`),
-        maximumRecords: 7
+        maximumRecords: 20
     }
     url.search = new URLSearchParams(params)
 
