@@ -356,6 +356,38 @@ async function getNLI(keywords) {
 
 }
 
+async function getTexts(latlon) {
+    document.querySelector('#mekoros').innerHTML = "";
+    const lat = latlon[0];
+    const lon = latlon[1];
+    await fetch(`https://geo-api.cauldron.sefaria.org/api/geo?lat=${lat}&lon=${lon}`)
+        .then((r) => r.json()).then(data => {
+            console.log(data)
+
+            for (let [key, value] of Object.entries(data)) {
+                console.log(key, value);
+                const title = document.createElement('div')
+                title.className = "title"
+                title.innerHTML = value["heRef"]
+                document.querySelector('#mekoros').appendChild(title);
+
+                const text = document.createElement('div')
+                text.classList.add("text", "clamped")
+                text.innerHTML = value["he"]
+                document.querySelector('#mekoros').appendChild(text);
+
+
+            }
+                //
+                //
+                // image.title = titleString
+                //
+                // document.querySelector("#placename").innerHTML = ""
+                // return true
+
+        })
+}
+
 let debounce
 function onMoveStart(evt) {
     document.querySelector("#nli_images").innerHTML = ""
@@ -372,12 +404,12 @@ function onMoveEnd(evt) {
     stopSearch = false
     const map = evt.map;
     const latLon = transform(map.getView().getCenter(), 'EPSG:3857', 'EPSG:4326')
-    console.log(latLon)
 
     debounce = setTimeout(
 
     function () {
         getPOIs(latLon, .5)
+        getTexts(latLon)
 
     }, 1000);
     // console.log(latLon)
@@ -394,11 +426,23 @@ document.querySelector('#nli_images').addEventListener('click', (e) => {
     document.querySelector('#image_det').src = e.target.src;
     document.querySelector('#caption').innerHTML = e.target.title;
     document.querySelector('#detail').style.display = "block";
-
-
-    // do your action on your 'li' or whatever it is you're listening for
   }
 });
+
+
+document.querySelector('#mekoros').addEventListener('click', (e) => {
+    if (e.target.classList.contains('clamped') ) {
+        const allText = document.querySelectorAll('.text')
+        allText.forEach((el) => {
+            el.classList.add("clamped")
+        })
+
+        e.target.classList.remove('clamped')
+    }
+
+
+});
+
 
 document.querySelector('#detail').addEventListener('click', (e) => {
     document.querySelector('#detail').style.display = "none";

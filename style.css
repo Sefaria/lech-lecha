@@ -6,18 +6,22 @@ html, body {
 }
 #map {
   top: 0;
-  height: 80%;
+  height: 50%;
   width: 100%;
 }
 
 #bottomContainer {
-  height: 20%;
+  height: 50%;
   bottom: 0;
 }
 #nli_images {
-  height: 100%;
+  height: 50%;
   white-space: nowrap;
   overflow-x: scroll;
+}
+#mekoros {
+  height: 50%;
+  overflow-y: scroll;
 }
 .nliImage {
   width: auto;
@@ -27,7 +31,7 @@ html, body {
   margin-inline-end: 5px;
 }
 
-#detail {
+#detail, #fullText {
   position: absolute;
   top: 0;
   bottom: 0;
@@ -51,7 +55,7 @@ html, body {
   border-radius: 20px;
   border: 1px solid black;
   left: 50%;
-  top:30%;
+  top:25%;
   position: absolute;
   background-color: red
 }
@@ -62,10 +66,28 @@ html, body {
   object-fit: contain;
   margin: auto
 }
+.title {
+  font-size: 30px;
+  margin-bottom: 10px;
+}
+
+.text {
+  font-size: 24px;
+  margin-bottom: 30px;
+  cursor: pointer;
+}
+
+.text.clamped {
+  -webkit-line-clamp: 2;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 #caption {
   position: absolute;
   bottom: 0;
-  font-size: 44px;
+  font-size: 24px;
   background: rgba(0, 0, 0,.5);
   width: 100%;
   text-align: center;
