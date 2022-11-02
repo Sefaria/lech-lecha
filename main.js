@@ -5,6 +5,35 @@ import OSM from 'ol/source/OSM';
 import {transform} from "ol/proj";
 
 let stopSearch = true;
+let firstLoad = true;
+navigator.geolocation.getCurrentPosition(coordsSet, coordsFailed, {
+  enableHighAccuracy: true,
+  timeout: 5000,
+  maximumAge: 0
+});
+
+function coordsSet(pos) {
+    console.log(pos.coords)
+
+    const lat = pos.coords.latitude
+    const lon = pos.coords.longitude
+    console.log(lat, lon)
+        // 29.55805
+    if (lon < 29.28 || lon > 33.20 || lat > 35.54 || lat < 34.2675131) {
+        console.log('not in Israel')
+        firstLoad = false;
+        map.getView().setCenter(transform([35.21525804388815, 31.775488166069692], 'EPSG:4326', 'EPSG:3857'))
+    }
+    else {
+        firstLoad = false;
+        map.getView().setCenter(transform([lon, lat], 'EPSG:4326', 'EPSG:3857'))
+    }
+}
+
+function  coordsFailed() {
+    firstLoad = false;
+    map.getView().setCenter(transform([35.21525804388815, 31.775488166069692], 'EPSG:4326', 'EPSG:3857'))
+}
 
 const map = new Map({
   target: 'map',
@@ -14,7 +43,7 @@ const map = new Map({
     })
   ],
   view: new View({
-    center: transform([35.21525804388815, 31.775488166069692], 'EPSG:4326', 'EPSG:3857'),
+    center: transform([0.0], 'EPSG:4326', 'EPSG:3857'),
     zoom: 18
   })
 });
@@ -348,6 +377,10 @@ function onMoveStart(evt) {
 }
 
 function onMoveEnd(evt) {
+    if (firstLoad) {
+        firstLoad = false;
+        return
+    }
     stopSearch = false
     const map = evt.map;
     const latLon = transform(map.getView().getCenter(), 'EPSG:3857', 'EPSG:4326')
