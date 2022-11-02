@@ -73,12 +73,16 @@ async function geoCode(lat, lon) {
             if (data['address']['village']) placeArray.push(
                 generateNliKeyword(data['address']['village'], isWb)
             )
+            if (data['address']['town']) placeArray.push(
+                generateNliKeyword(data['address']['town'], isWb)
+            )
             if (data['address']['city']) placeArray.push(
                 generateNliKeyword(data['address']['city'], isWb)
             )
             if (data['address']['state_district']) placeArray.push(
                 generateNliKeyword(data['address']['state_district'], isWb)
                 )
+            document.querySelector("#nli_images").innerHTML = ""
             getNLI(placeArray)
       })
 }
@@ -166,11 +170,10 @@ async function getImageDataFromNLI(url_req) {
             .then( xmlDoc => {
 
                 const recordsCount = xmlDoc.getElementsByTagName("numberOfRecords")[0].childNodes[0].nodeValue;
-                console.log(recordsCount)
                 if (recordsCount == 0) {
                   document.querySelector("#placename").innerHTML = ""
 
-                  return false
+                  return true
 
                 }
                 else {
@@ -193,7 +196,7 @@ async function getImageDataFromNLI(url_req) {
                             return true
                         }
                         else {
-                          return false
+                          return true
                         }
                     });
 
@@ -254,7 +257,9 @@ async function getPOIs(mapCenter, radius) {
             "War Memorial"
         ]
         if (data.elements.length === 0) {
-           document.querySelector('#placename').innerHTML = `לצערנו, לא נמצאו נקודות עניין ברדיוס של ${radius} ק״מ`;
+            document.querySelector('#placename').innerHTML = `לצערנו, לא נמצאו נקודות עניין ברדיוס של ${radius} ק״מ`;
+            const latLon = transform(map.getView().getCenter(), 'EPSG:3857', 'EPSG:4326')
+            geoCode(latLon[1], latLon[0])
         }
 
         let pois = []
@@ -282,17 +287,20 @@ async function getPOIs(mapCenter, radius) {
 
                   document.querySelector('#placename').innerHTML = `מחפש תוצאות עבור ${poi.tags.name}`;
 
-                  console.log(i)
+                  if (i+1 === data.elements.length && document.querySelectorAll(".nliimages").length === 0) {
+                    const latLon = transform(map.getView().getCenter(), 'EPSG:3857', 'EPSG:4326')
+                    geoCode(latLon[1], latLon[0])
+                  }
+
                   return getImageDataFromNLI(url)
-
-
-
 
                 }
                 else {
-                    document.querySelector('#placename').innerHTML = `מחפש תוצאות עבור ${poi.tags.name}`;
-
-                    return true
+                  if (i+1 === data.elements.length && document.querySelectorAll(".nliimages").length === 0) {
+                    const latLon = transform(map.getView().getCenter(), 'EPSG:3857', 'EPSG:4326')
+                    geoCode(latLon[1], latLon[0])
+                  }
+                  return true
                 }
             }
         })
@@ -303,9 +311,6 @@ async function getPOIs(mapCenter, radius) {
     })
 
 }
-
-
-
 
 async function getNLI(keywords) {
     document.querySelector("#placename").innerHTML = "טוען..."
@@ -328,43 +333,13 @@ async function getNLI(keywords) {
     }
     url.search = new URLSearchParams(params)
 
-    console.log(url)
     document.querySelector('#placename').innerHTML = `מחפש תוצאות עבור ${keyword}`;
 
-    await fetch(url)
-        .then((r) => r.text())
-        .then(str => new window.DOMParser().parseFromString(str, "text/xml"))
-        .then( xmlDoc => {
-            console.log(xmlDoc)
-
-            const recordsCount = xmlDoc.getElementsByTagName("numberOfRecords")[0].childNodes[0].nodeValue;
-            console.log(recordsCount)
-            if (recordsCount == 0) {
-                getNLI(keywords)
-            }
-            else {
-                document.querySelector('#nli_images').innerHTML = "";
-                const records = xmlDoc.querySelector("records").querySelectorAll("recordData")
-
-
-                records.forEach(record => {
-                    const tag907 = record.querySelector("[*|tag='907']")
-                    const tag245 = record.querySelector("[*|tag='245']")
-                    let titleString = ""
-                    if (tag245) {titleString = titleString + `${tag245.querySelector("[*|code='a']").innerHTML} `}
-                    if (tag907) {
-                        const image = document.createElement('img')
-                        image.className = "nliImage"
-                        image.src  = `https://rosetta.nli.org.il/delivery/DeliveryManagerServlet?dps_func=stream&dps_pid=${tag907.querySelector("[*|code='d']").innerHTML}`
-
-                        image.title = titleString
-
-                        document.querySelector('#nli_images').appendChild(image);
-                    }
-                });
-
-            }
-        })
+    getImageDataFromNLI(url).then(() => {
+        if (document.querySelectorAll(".nliimages").length === 0) {
+            getNLI(keywords)
+        }
+    })
 
 }
 
@@ -389,7 +364,6 @@ function onMoveEnd(evt) {
     debounce = setTimeout(
 
     function () {
-        // geoCode(latLon[1], latLon[0])
         getPOIs(latLon, .5)
 
     }, 1000);
