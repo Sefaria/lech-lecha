@@ -362,10 +362,11 @@ async function getTexts(latlon) {
     const lon = latlon[1];
     await fetch(`https://geo-api.cauldron.sefaria.org/api/geo?lat=${lat}&lon=${lon}`)
         .then((r) => r.json()).then(data => {
-            console.log(data)
+            if (data[""]) {
+                return
+            }
 
             for (let [key, value] of Object.entries(data)) {
-                console.log(key, value);
                 const title = document.createElement('div')
                 title.className = "title"
                 title.innerHTML = value["heRef"]
@@ -378,13 +379,6 @@ async function getTexts(latlon) {
 
 
             }
-                //
-                //
-                // image.title = titleString
-                //
-                // document.querySelector("#placename").innerHTML = ""
-                // return true
-
         })
 }
 
